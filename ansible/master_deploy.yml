@@ -1,0 +1,44 @@
+---
+- name: Full End-to-End Boutique Deployment
+  hosts: localhost
+  connection: local
+  vars:
+    project_root: "{{ playbook_dir }}/.."
+    tf_dir: "{{ project_root }}/projects/Infrastructure"
+    k8s_dir: "{{ project_root }}/gitops"
+    aws_region: "us-east-1"
+    cluster_name: "eks-cluster"
+
+  tasks:
+    - name: 1. Initialize and Apply Terraform
+      community.general.terraform:
+        project_path: "{{ tf_dir }}"
+        state: present
+        force_init: yes
+      register: tf_result
+
+    - name: 2. Update Kubeconfig
+      command: "python -m awscli eks update-kubeconfig --region {{ aws_region }} --name {{ cluster_name }}"
+      register: kubeconfig_result
+
+    - name: 3. Create Boutique Namespace
+      command: "kubectl apply -f {{ k8s_dir }}/namespace.yml"
+
+    - name: 4. Apply Database Secrets
+      command: "kubectl apply -f {{ k8s_dir }}/secrets.yml"
+
+    - name: 5. Deploy Boutique Microservices via Kustomize
+      command: "kubectl apply -k {{ k8s_dir }}"
+
+    - name: 6. Wait for Database to be Ready
+      command: "kubectl wait --for=condition=ready pod -l app=boutique-postgres -n boutique --timeout=300s"
+
+    - name: 7. Run Database Restore Job
+      command: "kubectl apply -f {{ k8s_dir }}/k8s/database/restore-job.yml"
+
+    - name: 8. Setup Port Forwarding Reference
+      debug:
+        msg: |
+          Deployment Successful! 
+          Run 'kubectl port-forward svc/frontend 3000:3000 -n boutique' to access the UI.
+          Run 'kubectl port-forward svc/kube-prometheus-stack-grafana 8080:80 -n monitoring' for Grafana.
