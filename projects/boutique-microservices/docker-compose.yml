@@ -60,7 +60,7 @@ services:
 
 
 
-  # API Gateway
+  # API Gateway (external access required)
   gateway:
     build:
       context: ./backend/services/gateway
@@ -75,22 +75,29 @@ services:
       - PRODUCTS_SERVICE_URL=http://product-service:3003
       - ORDER_SERVICE_URL=http://order-service:3004
       - ORDERS_SERVICE_URL=http://orders:3005
-      - USER_SERVICE_URL=http://user-service:3006
+      - USERS_SERVICE_URL=http://user-service:3006
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - boutique-network
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
 
-  # Auth Service
+  # Auth Service (internal only)
   auth:
     build:
       context: ./backend/services/auth
       dockerfile: Dockerfile
     container_name: boutique-auth
-    ports:
-      - "3002:3002"
+    expose:
+      - "3002"
     environment:
       - NODE_ENV=development
       - PORT=3002
@@ -101,15 +108,22 @@ services:
     networks:
       - boutique-network
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
 
-  # Product Service
+  # Product Service (internal only)
   product-service:
     build:
       context: ./backend/services/product-service
       dockerfile: Dockerfile
     container_name: boutique-products
-    ports:
-      - "3003:3003"
+    expose:
+      - "3003"
     environment:
       - NODE_ENV=development
       - PORT=3003
@@ -120,15 +134,22 @@ services:
     networks:
       - boutique-network
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
 
-  # Order Service
+  # Order Service (internal only)
   order-service:
     build:
       context: ./backend/services/order-service
       dockerfile: Dockerfile
     container_name: boutique-orders
-    ports:
-      - "3004:3004"
+    expose:
+      - "3004"
     environment:
       - NODE_ENV=development
       - PORT=3004
@@ -145,15 +166,22 @@ services:
     networks:
       - boutique-network
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
 
-  # Orders Service (Order Management)
+  # Orders Service (Order Management) (internal only)
   orders:
     build:
       context: ./backend/services/orders
       dockerfile: Dockerfile
     container_name: boutique-order-management
-    ports:
-      - "3005:3005"
+    expose:
+      - "3005"
     environment:
       - NODE_ENV=development
       - PORT=3005
@@ -164,15 +192,22 @@ services:
     networks:
       - boutique-network
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
 
-  # User Service
+  # User Service (internal only)
   user-service:
     build:
       context: ./backend/services/user-service
       dockerfile: Dockerfile
     container_name: boutique-users
-    ports:
-      - "3006:3006"
+    expose:
+      - "3006"
     environment:
       - NODE_ENV=development
       - PORT=3006
@@ -183,6 +218,13 @@ services:
     networks:
       - boutique-network
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
 
   # Node Exporter
   node-exporter:
@@ -215,14 +257,14 @@ services:
       - boutique-network
     restart: unless-stopped
 
-  # Frontend
+  # Frontend (external access required)
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: boutique-frontend
     ports:
-      - "3000:80"
+      - "3008:80"
     environment:
       - REACT_APP_API_URL=http://localhost:3001/api
     depends_on:

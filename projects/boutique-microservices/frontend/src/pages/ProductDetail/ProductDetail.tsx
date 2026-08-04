@@ -20,6 +20,9 @@ import {
   Alert,
   Tabs,
   Tab,
+  TextField,
+  Avatar,
+  Rating,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -36,6 +39,14 @@ import { productService } from '../../services/productService';
 import { Product } from '../../types';
 import { useCart } from '../../contexts/CartContext';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
+
+interface Review {
+  id: string;
+  name: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -66,6 +77,9 @@ const ProductDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [tabValue, setTabValue] = useState(0);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [newReview, setNewReview] = useState({ name: '', rating: 5, comment: '' });
   const { addItem } = useCart();
 
   const relatedProducts: Product[] = []; // This would come from an API call
@@ -77,6 +91,19 @@ const ProductDetail: React.FC = () => {
       try {
         const productData = await productService.getById(id);
         setProduct(productData);
+
+        const stored = localStorage.getItem(`reviews_${id}`);
+        if (stored) {
+          setReviews(JSON.parse(stored));
+        } else {
+          const seedReviews: Review[] = [
+            { id: '1', name: 'Sarah M.', rating: 5, comment: 'Absolutely stunning piece! The quality is exceptional and it arrived beautifully packaged. Worth every penny.', date: '2026-06-15' },
+            { id: '2', name: 'Emma L.', rating: 4, comment: 'Beautiful product, exactly as described. Shipping was fast and the packaging was luxurious. Will definitely shop here again!', date: '2026-06-02' },
+            { id: '3', name: 'Priya K.', rating: 5, comment: 'This exceeded my expectations! The craftsmanship is impeccable and it looks even better in person. Highly recommend!', date: '2026-05-20' },
+          ];
+          setReviews(seedReviews);
+          localStorage.setItem(`reviews_${id}`, JSON.stringify(seedReviews));
+        }
       } catch (error) {
         console.error('Error loading product:', error);
         navigate('/products');
@@ -87,6 +114,22 @@ const ProductDetail: React.FC = () => {
 
     loadProduct();
   }, [id, navigate]);
+
+  const handleSubmitReview = () => {
+    if (!newReview.name || !newReview.comment) return;
+    const review: Review = {
+      id: Date.now().toString(),
+      name: newReview.name,
+      rating: newReview.rating,
+      comment: newReview.comment,
+      date: new Date().toISOString().split('T')[0],
+    };
+    const updated = [...reviews, review];
+    setReviews(updated);
+    localStorage.setItem(`reviews_${id}`, JSON.stringify(updated));
+    setNewReview({ name: '', rating: 5, comment: '' });
+    setShowReviewForm(false);
+  };
 
   const handleAddToCart = () => {
     if (product) {
@@ -415,10 +458,80 @@ const ProductDetail: React.FC = () => {
               </TabPanel>
               
               <TabPanel value={tabValue} index={2}>
-                <Typography variant="body1" paragraph>
-                  No reviews yet. Be the first to review this product!
-                </Typography>
-                <Button variant="outlined">Write a Review</Button>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Box>
+                    <Typography variant="h5">Customer Reviews</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                      <Rating value={reviews.length ? reviews.reduce((a, b) => a + b.rating, 0) / reviews.length : 0} readOnly precision={0.5} />
+                      <Typography variant="body2" sx={{ ml: 1 }}>
+                        {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Button variant="contained" onClick={() => setShowReviewForm(!showReviewForm)}>
+                    {showReviewForm ? 'Cancel' : 'Write a Review'}
+                  </Button>
+                </Box>
+
+                {showReviewForm && (
+                  <Paper sx={{ p: 3, mb: 4, bgcolor: 'background.default' }}>
+                    <Typography variant="h6" gutterBottom>Write a Review</Typography>
+                    <Grid container spacing={2}>
+                      <Grid size={{ xs: 12 }}>
+                        <Typography component="legend">Rating</Typography>
+                        <Rating
+                          name="new-rating"
+                          value={newReview.rating}
+                          onChange={(_, value) => setNewReview({ ...newReview, rating: value || 5 })}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField
+                          fullWidth
+                          label="Your Name"
+                          value={newReview.name}
+                          onChange={(e) => setNewReview({ ...newReview, name: e.target.value })}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12 }}>
+                        <TextField
+                          fullWidth
+                          multiline
+                          rows={4}
+                          label="Your Review"
+                          value={newReview.comment}
+                          onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12 }}>
+                        <Button variant="contained" onClick={handleSubmitReview} disabled={!newReview.name || !newReview.comment}>
+                          Submit Review
+                        </Button>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                )}
+
+                {reviews.map((review) => (
+                  <Box key={review.id} sx={{ mb: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32, mr: 2 }}>
+                        {review.name.charAt(0)}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="subtitle2">{review.name}</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Rating value={review.rating} readOnly size="small" />
+                          <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+                            {review.date}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                    <Typography variant="body2">{review.comment}</Typography>
+                    <Divider sx={{ mt: 2 }} />
+                  </Box>
+                ))}
               </TabPanel>
               
               <TabPanel value={tabValue} index={3}>

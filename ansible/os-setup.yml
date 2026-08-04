@@ -1,0 +1,22 @@
+---
+- name: OS Level Configuration for Local Cloud (Floci)
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Ensure Floci is running
+      command: docker-compose -f ../floci-compose.yml up -d
+      args:
+        chdir: "{{ playbook_dir }}"
+      register: floci_up
+
+    - name: Display Floci Status
+      debug:
+        var: floci_up.stdout_lines
+
+    - name: Install local cloud tools (awscli-local, terraform-local)
+      pip:
+        name: 
+          - awscli-local
+          - terraform-local
+        state: present
+        extra_args: --user

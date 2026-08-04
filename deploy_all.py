@@ -22,8 +22,9 @@ def run_command(command, cwd=None, env=None):
         text=True
     )
     
-    for line in process.stdout:
-        print(line, end="")
+    if process.stdout is not None:
+        for line in process.stdout:
+            print(line, end="")
     
     process.wait()
     if process.returncode != 0:
@@ -33,14 +34,33 @@ def run_command(command, cwd=None, env=None):
 def main():
     print("🚀 Starting Full Automated Boutique Deployment...")
 
+    # Set Floci local cloud env variables
+    env = os.environ.copy()
+    env["AWS_ENDPOINT_URL"] = "http://localhost:4566"
+    env["AWS_ACCESS_KEY_ID"] = "test"
+    env["AWS_SECRET_ACCESS_KEY"] = "test"
+    env["AWS_DEFAULT_REGION"] = REGION
+    
     # 1. Terraform Init & Apply
     print("\n--- Phase 1: Infrastructure Provisioning (Terraform) ---")
-    run_command("terraform init", cwd=TF_DIR)
-    run_command("terraform apply --auto-approve", cwd=TF_DIR)
+    run_command("terraform init", cwd=TF_DIR, env=env)
+    run_command("terraform apply -target=module.vpc -target=module.eks -target=module.ecr --auto-approve", cwd=TF_DIR, env=env)
+    run_command("terraform apply --auto-approve", cwd=TF_DIR, env=env)
 
     # 2. Update Kubeconfig
     print("\n--- Phase 2: Configuring Kubernetes Access ---")
-    run_command(f"python -m awscli eks update-kubeconfig --region {REGION} --name {CLUSTER_NAME}")
+    run_command(f"python -m awscli eks update-kubeconfig --region {REGION} --name {CLUSTER_NAME} --endpoint-url http://localhost:4566", env=env)
+
+    # Patch kubeconfig to use python -m awscli
+    import pathlib
+    kubeconfig_path = pathlib.Path.home() / '.kube' / 'config'
+    if kubeconfig_path.exists():
+        with open(kubeconfig_path, 'r') as f:
+            content = f.read()
+        content = content.replace('command: aws', 'command: python')
+        content = content.replace('      args:\n', '      args:\n      - -m\n      - awscli\n')
+        with open(kubeconfig_path, 'w') as f:
+            f.write(content)
 
     # 3. Apply K8s Manifests
     print("\n--- Phase 3: Deploying Microservices ---")
@@ -60,7 +80,6 @@ def main():
     print("\n✅ DEPLOYMENT COMPLETE!")
     print("\nNext Steps:")
     print(f"1. Access UI: kubectl port-forward svc/frontend 3000:3000 -n boutique")
-    print(f"2. Access Grafana: kubectl port-forward svc/kube-prometheus-stack-grafana 8080:80 -n monitoring")
 
 if __name__ == "__main__":
     main()

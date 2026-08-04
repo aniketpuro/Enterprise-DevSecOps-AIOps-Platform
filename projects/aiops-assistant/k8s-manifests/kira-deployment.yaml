@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aiops
+
+---
+# 1. Service Account for Kira
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kira-sa
+  namespace: aiops
+
+---
+# 2. ClusterRole (Allows reading Pods, Logs, Events, Nodes across ALL namespaces)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kira-cluster-reader
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/log", "events", "nodes", "services"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["pods", "nodes"]
+  verbs: ["get", "list", "watch"]
+
+---
+# 3. ClusterRoleBinding (Binds the ClusterRole to the ServiceAccount)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kira-cluster-reader-binding
+subjects:
+- kind: ServiceAccount
+  name: kira-sa
+  namespace: aiops
+roleRef:
+  kind: ClusterRole
+  name: kira-cluster-reader
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# 4. Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kira-agent
+  namespace: aiops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kira
+  template:
+    metadata:
+      labels:
+        app: kira
+    spec:
+      serviceAccountName: kira-sa
+      automountServiceAccountToken: true  # This automatically injects the CA cert & Token!
+      containers:
+      - name: kira
+        image: aniketpuro/kira-vps:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8501
+        env:
+        - name: INFRA_MODE
+          value: "kubernetes"
+        - name: KUBE_NAMESPACE
+          value: "all"
+        - name: LLM_PROVIDER
+          value: "bedrock"
+        - name: BEDROCK_MODEL_ID
+          value: "qwen.qwen3-32b-v1:0"
+        - name: AWS_REGION
+          value: "us-east-1"
+        - name: PROMETHEUS_URL
+          value: "http://prometheus-server.monitoring.svc.cluster.local:80"
+        # Secret reference for AWS Keys
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: kira-secrets
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: kira-secrets
+              key: AWS_SECRET_ACCESS_KEY
+
+---
+# 5. Service (NodePort or LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: kira-service
+  namespace: aiops
+spec:
+  type: NodePort
+  ports:
+  - port: 8501
+    targetPort: 8501
+    nodePort: 30001
+  selector:
+    app: kira

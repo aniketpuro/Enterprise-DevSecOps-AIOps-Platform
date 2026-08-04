@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  floci:
+    image: floci/floci:latest
+    container_name: floci-local-cloud
+    ports:
+      - "4566:4566"
+    environment:
+      - FLOCI_HOSTNAME=localhost
+    volumes:
+      - //var/run/docker.sock:/var/run/docker.sock
+    user: root

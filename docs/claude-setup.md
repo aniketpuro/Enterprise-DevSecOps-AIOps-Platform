@@ -1,4 +1,4 @@
-# Claude Code Setup
+ # Claude Code Setup
 
 This project uses [Claude Code](https://claude.ai/claude-code) — Anthropic's AI coding assistant — as a hands-on tool throughout the DevOps workflow. This document covers how Claude is configured in this project: the `CLAUDE.md` instruction file and the MCP servers that extend its capabilities.
 

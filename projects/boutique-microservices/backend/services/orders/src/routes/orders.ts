@@ -128,4 +128,22 @@ router.patch('/:id/status', async (req, res) => {
   }
 });
 
+router.post('/checkout', async (req, res) => {
+  try {
+    console.log("=========================================");
+    console.log("📧 MOCK EMAIL SENT TO USER:");
+    console.log("Subject: Order Confirmation");
+    console.log("Message: lolnis a fack e commers pese nhi kateee");
+    console.log("=========================================");
+    
+    // Simulate payment delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    res.json({ success: true, message: 'Payment processed and email sent successfully!' });
+  } catch (error) {
+    console.error('Checkout error:', error);
+    res.status(500).json({ success: false, error: 'Failed to process checkout' });
+  }
+});
+
 export { router as orderRoutes };

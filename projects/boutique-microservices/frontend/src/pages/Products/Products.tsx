@@ -47,6 +47,7 @@ const Products: React.FC = () => {
   const [sortBy, setSortBy] = useState('featured');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<any>(null);
   const { addItem } = useCart();
 
   const categories = [
@@ -100,6 +101,25 @@ const Products: React.FC = () => {
   useEffect(() => {
     let filtered = products;
 
+    if (activeFilters) {
+      if (activeFilters.priceRange) {
+        filtered = filtered.filter(product => 
+          product.price >= activeFilters.priceRange[0] && product.price <= activeFilters.priceRange[1]
+        );
+      }
+      if (activeFilters.category) {
+        filtered = filtered.filter(product => product.category.toLowerCase() === activeFilters.category.toLowerCase());
+      }
+      if (activeFilters.brand && activeFilters.brand.length > 0) {
+        filtered = filtered.filter(product => 
+          activeFilters.brand.includes(product.brand)
+        );
+      }
+      if (activeFilters.inStock) {
+        filtered = filtered.filter(product => product.inventory > 0);
+      }
+    }
+
     if (searchQuery) {
       filtered = filtered.filter(product =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -125,58 +145,10 @@ const Products: React.FC = () => {
     });
 
     setFilteredProducts(filtered);
-  }, [products, searchQuery, sortBy]);
+  }, [products, searchQuery, sortBy, activeFilters]);
 
   const handleFilterChange = (filters: any) => {
-    let filtered = products;
-
-    // Apply filters
-    if (filters.priceRange) {
-      filtered = filtered.filter(product => 
-        product.price >= filters.priceRange[0] && product.price <= filters.priceRange[1]
-      );
-    }
-
-    if (filters.category) {
-      filtered = filtered.filter(product => product.category === filters.category);
-    }
-
-    if (filters.brand && filters.brand.length > 0) {
-      filtered = filtered.filter(product => 
-        filters.brand.includes(product.brand)
-      );
-    }
-
-    if (filters.inStock) {
-      filtered = filtered.filter(product => product.inventory > 0);
-    }
-
-    // Apply search query
-    if (searchQuery) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Apply sorting
-    filtered = [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case 'price-low':
-          return a.price - b.price;
-        case 'price-high':
-          return b.price - a.price;
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'newest':
-          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-        default:
-          return 0;
-      }
-    });
-
-    setFilteredProducts(filtered);
+    setActiveFilters(filters);
   };
 
   if (loading) {

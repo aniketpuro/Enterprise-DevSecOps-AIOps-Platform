@@ -64,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           dispatch({ type: 'LOGIN_FAILURE', payload: 'Session expired' });
         }
       } else {
-        dispatch({ type: 'LOGIN_SUCCESS', payload: null as any });
+        dispatch({ type: 'LOGOUT' });
       }
     };
 
@@ -79,7 +79,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('refreshToken', response.refreshToken);
       dispatch({ type: 'LOGIN_SUCCESS', payload: response.user });
     } catch (error: any) {
-      dispatch({ type: 'LOGIN_FAILURE', payload: error.response?.data?.message || 'Login failed' });
+      const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
+      dispatch({ type: 'LOGIN_FAILURE', payload: message });
+      throw error; // re-throw so Login.tsx catch block prevents navigation
     }
   };
 

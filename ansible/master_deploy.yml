@@ -40,5 +40,5 @@
       debug:
         msg: |
           Deployment Successful! 
-          Run 'kubectl port-forward svc/frontend 3000:3000 -n boutique' to access the UI.
+          Run 'kubort-forwectl pard svc/frontend 3000:3000 -n boutique' to access the UI.
           Run 'kubectl port-forward svc/kube-prometheus-stack-grafana 8080:80 -n monitoring' for Grafana.

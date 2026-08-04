@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 import { metricsMiddleware, setupMetrics } from './metrics';
 
 dotenv.config();
@@ -12,6 +13,16 @@ const PORT: number = Number(process.env.GATEWAY_PORT) || 3001;
 
 app.use(helmet());
 app.use(cors());
+
+// Rate Limiting (100 requests per 15 minutes per IP)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests from this IP, please try again after 15 minutes. (Rate Limit Enforced)' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api', limiter);
 
 setupMetrics(app, { serviceName: 'gateway', serviceVersion: '1.0.0' });
 
