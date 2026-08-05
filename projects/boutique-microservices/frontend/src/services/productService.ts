@@ -1,14 +1,57 @@
 import apiClient from './api';
 import { Product } from '../types';
 
-// Helper function to get proper image URL
+// ── Local AI-generated image map (name/slug → local path) ──────────────────
+// These are high-quality images generated specifically for this project.
+// They act as the PRIMARY source so the UI always looks great on any env.
+const LOCAL_IMAGE_MAP: Record<string, string> = {
+  // by slug
+  'silk-evening-gown':  '/product-images/silk-evening-gown.jpg',
+  'cashmere-coat':      '/product-images/cashmere-coat.jpg',
+  'leather-handbag':   '/product-images/leather-handbag.jpg',
+  'diamond-necklace':  '/product-images/diamond-necklace.jpg',
+  'designer-heels':    '/product-images/designer-heels.jpg',
+  // by lowercase name fragment (for robustness)
+  'silk evening gown': '/product-images/silk-evening-gown.jpg',
+  'cashmere coat':     '/product-images/cashmere-coat.jpg',
+  'leather handbag':   '/product-images/leather-handbag.jpg',
+  'diamond necklace':  '/product-images/diamond-necklace.jpg',
+  'designer heels':    '/product-images/designer-heels.jpg',
+};
+
+// Curated Unsplash fallbacks per category (when local image not matched)
+const CATEGORY_IMAGE_MAP: Record<string, string> = {
+  clothing:    'https://images.unsplash.com/photo-1445205170230-053b83016050?w=600&q=80',
+  accessories: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&q=80',
+  shoes:       'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=600&q=80',
+  bags:        'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&q=80',
+  jewelry:     'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&q=80',
+};
+
+/**
+ * Resolve the best available image for a product.
+ * Priority: local AI image → DB image_url → category fallback → placeholder
+ */
 const getImageUrl = (product: any): string => {
-  // Backend is now handling image mapping, so just return the image_url as-is
-  if (product.image_url) {
+  const slug = (product.slug || '').toLowerCase();
+  const name = (product.name || '').toLowerCase();
+  const category = (product.category || product.category_id || '').toLowerCase();
+
+  // 1. Check local AI-generated images by slug or name
+  if (LOCAL_IMAGE_MAP[slug]) return LOCAL_IMAGE_MAP[slug];
+  for (const key of Object.keys(LOCAL_IMAGE_MAP)) {
+    if (name.includes(key) || slug.includes(key)) return LOCAL_IMAGE_MAP[key];
+  }
+
+  // 2. Use DB image_url if it looks valid (http/https or starts with /)
+  if (product.image_url && (product.image_url.startsWith('http') || product.image_url.startsWith('/'))) {
     return product.image_url;
   }
-  
-  // Default fallback
+
+  // 3. Category-based Unsplash fallback
+  if (CATEGORY_IMAGE_MAP[category]) return CATEGORY_IMAGE_MAP[category];
+
+  // 4. Generic placeholder
   return '/product-images/placeholder.jpg';
 };
 
@@ -22,14 +65,13 @@ export const productService = {
       // Transform API response to match frontend types
       if (apiResponse.success && apiResponse.data?.products) {
         console.log('[ProductService] Using wrapped response format');
-        return apiResponse.data.products.map((product: any) => {
-          return {
+        return apiResponse.data.products.map((product: any) => ({
             id: product.id,
             name: product.name,
             description: product.description,
             price: parseFloat(product.price),
             originalPrice: product.compare_price ? parseFloat(product.compare_price) : undefined,
-            imageUrl: product.image_url,
+            imageUrl: getImageUrl(product),   // ← smart local-first image resolution
             category: product.category,
             brand: product.brand,
             inventory: product.inventory_quantity || 0,
@@ -39,8 +81,7 @@ export const productService = {
             discountPercentage: product.discountPercentage,
             createdAt: product.created_at,
             updatedAt: product.updated_at,
-          };
-        });
+        }));
       }
       
       // Fallback for direct array response
