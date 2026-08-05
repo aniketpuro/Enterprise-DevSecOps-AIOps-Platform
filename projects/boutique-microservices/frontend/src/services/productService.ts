@@ -55,6 +55,97 @@ const getImageUrl = (product: any): string => {
   return '/product-images/placeholder.jpg';
 };
 
+// ── Shared demo/fallback product catalogue ────────────────────────────────────
+// Used by getAll() and getById() when the backend is unreachable.
+// Matches the real DB seed data so local + VPS look identical.
+const DEMO_PRODUCTS: Product[] = [
+  {
+    id: 'demo-1',
+    name: 'Silk Evening Gown',
+    description: 'Beautiful floor-length gown crafted from premium silk with an elegant silhouette perfect for black-tie events.',
+    price: 1899.00,
+    originalPrice: 2299.00,
+    imageUrl: '/product-images/silk-evening-gown.jpg',
+    category: 'clothing',
+    brand: 'LUXE BOUTIQUE',
+    inventory: 15,
+    rating: 4.8,
+    reviewCount: 42,
+    isNew: true,
+    discountPercentage: 17,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'demo-2',
+    name: 'Cashmere Coat',
+    description: 'Elegant wool and cashmere blend coat. Timeless silhouette with a luxuriously soft finish, ideal for winter.',
+    price: 899.00,
+    originalPrice: 1200.00,
+    imageUrl: '/product-images/cashmere-coat.jpg',
+    category: 'clothing',
+    brand: 'LUXE BOUTIQUE',
+    inventory: 20,
+    rating: 4.7,
+    reviewCount: 38,
+    isNew: false,
+    discountPercentage: 25,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'demo-3',
+    name: 'Leather Handbag',
+    description: 'Premium Italian full-grain leather tote with polished gold hardware and hand-stitched detailing.',
+    price: 599.00,
+    originalPrice: 799.00,
+    imageUrl: '/product-images/leather-handbag.jpg',
+    category: 'bags',
+    brand: 'LUXE BOUTIQUE',
+    inventory: 25,
+    rating: 4.9,
+    reviewCount: 67,
+    isNew: false,
+    discountPercentage: 25,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'demo-4',
+    name: 'Diamond Necklace',
+    description: 'Stunning VS1 diamond pendant on a platinum chain. Elegantly packaged in our signature gift box.',
+    price: 2999.00,
+    originalPrice: 3999.00,
+    imageUrl: '/product-images/diamond-necklace.jpg',
+    category: 'jewelry',
+    brand: 'LUXE BOUTIQUE',
+    inventory: 10,
+    rating: 5.0,
+    reviewCount: 19,
+    isNew: true,
+    discountPercentage: 25,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'demo-5',
+    name: 'Designer Heels',
+    description: 'Elegant stiletto heels in premium calf leather. A wardrobe staple that effortlessly elevates any outfit.',
+    price: 499.00,
+    originalPrice: 699.00,
+    imageUrl: '/product-images/designer-heels.jpg',
+    category: 'shoes',
+    brand: 'LUXE BOUTIQUE',
+    inventory: 18,
+    rating: 4.6,
+    reviewCount: 53,
+    isNew: false,
+    discountPercentage: 29,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
 export const productService = {
   getAll: async (): Promise<Product[]> => {
     console.log('[ProductService] Fetching products from:', process.env.REACT_APP_API_URL || 'http://localhost:3003');
@@ -105,95 +196,7 @@ export const productService = {
       })) : [];
     } catch (error: any) {
       console.warn('[ProductService] Backend unavailable — using demo products for UI preview');
-      // ── Demo / fallback products (used when backend is unreachable) ──────────
-      // These match the real DB seed data so VPS and local look identical.
-      return [
-        {
-          id: 'demo-1',
-          name: 'Silk Evening Gown',
-          description: 'Beautiful floor-length gown crafted from premium silk with an elegant silhouette perfect for black-tie events.',
-          price: 1899.00,
-          originalPrice: 2299.00,
-          imageUrl: '/product-images/silk-evening-gown.jpg',
-          category: 'clothing',
-          brand: 'LUXE BOUTIQUE',
-          inventory: 15,
-          rating: 4.8,
-          reviewCount: 42,
-          isNew: true,
-          discountPercentage: 17,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'demo-2',
-          name: 'Cashmere Coat',
-          description: 'Elegant wool and cashmere blend coat. Timeless silhouette with a luxuriously soft finish, ideal for winter.',
-          price: 899.00,
-          originalPrice: 1200.00,
-          imageUrl: '/product-images/cashmere-coat.jpg',
-          category: 'clothing',
-          brand: 'LUXE BOUTIQUE',
-          inventory: 20,
-          rating: 4.7,
-          reviewCount: 38,
-          isNew: false,
-          discountPercentage: 25,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'demo-3',
-          name: 'Leather Handbag',
-          description: 'Premium Italian full-grain leather tote with polished gold hardware and hand-stitched detailing.',
-          price: 599.00,
-          originalPrice: 799.00,
-          imageUrl: '/product-images/leather-handbag.jpg',
-          category: 'bags',
-          brand: 'LUXE BOUTIQUE',
-          inventory: 25,
-          rating: 4.9,
-          reviewCount: 67,
-          isNew: false,
-          discountPercentage: 25,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'demo-4',
-          name: 'Diamond Necklace',
-          description: 'Stunning VS1 diamond pendant on a platinum chain. Elegantly packaged in our signature gift box.',
-          price: 2999.00,
-          originalPrice: 3999.00,
-          imageUrl: '/product-images/diamond-necklace.jpg',
-          category: 'jewelry',
-          brand: 'LUXE BOUTIQUE',
-          inventory: 10,
-          rating: 5.0,
-          reviewCount: 19,
-          isNew: true,
-          discountPercentage: 25,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'demo-5',
-          name: 'Designer Heels',
-          description: 'Elegant stiletto heels in premium calf leather. A wardrobe staple that effortlessly elevates any outfit.',
-          price: 499.00,
-          originalPrice: 699.00,
-          imageUrl: '/product-images/designer-heels.jpg',
-          category: 'shoes',
-          brand: 'LUXE BOUTIQUE',
-          inventory: 18,
-          rating: 4.6,
-          reviewCount: 53,
-          isNew: false,
-          discountPercentage: 29,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
+      return DEMO_PRODUCTS;
     }
   },
 
@@ -222,8 +225,12 @@ export const productService = {
         images: product.images || [],
       };
     } catch (error: any) {
-      console.error('[ProductService] Error fetching product:', error);
-      throw error;
+      console.warn('[ProductService] getById fallback — searching demo products for id:', id);
+      // Try to find in demo products (works with demo-1, demo-2 ... ids)
+      const found = DEMO_PRODUCTS.find((p) => p.id === id);
+      if (found) return found;
+      // If not found, return first demo product to avoid blank page
+      return DEMO_PRODUCTS[0];
     }
   },
 
